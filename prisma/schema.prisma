@@ -1,0 +1,179 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users       OrganizationUser[]
+  integrations Integration[]
+  projects    Project[]
+  metrics     Metric[]
+  predictions Prediction[]
+
+  @@map("organizations")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  organizations OrganizationUser[]
+  integrations  Integration[]
+  metrics       Metric[]
+  predictions   Prediction[]
+
+  @@map("users")
+}
+
+model OrganizationUser {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  role           UserRole @default(MEMBER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("organization_users")
+}
+
+model Integration {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  type           IntegrationType
+  name           String
+  config         Json
+  isActive       Boolean          @default(true)
+  lastSyncAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects     Project[]
+  metrics      Metric[]
+
+  @@map("integrations")
+}
+
+model Project {
+  id             String @id @default(cuid())
+  organizationId String
+  integrationId  String
+  externalId     String
+  name           String
+  description    String?
+  config         Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  integration  Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  metrics      Metric[]
+
+  @@unique([organizationId, externalId])
+  @@map("projects")
+}
+
+model Metric {
+  id             String      @id @default(cuid())
+  organizationId String
+  projectId      String?
+  integrationId  String?
+  userId         String?
+  type           MetricType
+  value          Float
+  metadata       Json?
+  date           DateTime
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  integration  Integration? @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("metrics")
+}
+
+model Prediction {
+  id             String         @id @default(cuid())
+  organizationId String
+  type           PredictionType
+  title          String
+  description    String
+  confidence     Float
+  metadata       Json?
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("predictions")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum IntegrationType {
+  AZURE_DEVOPS
+  JIRA
+  GITHUB
+  GITLAB
+}
+
+enum MetricType {
+  LEAD_TIME_CHANGES
+  DEPLOYMENT_FREQUENCY
+  PR_CYCLE_TIME
+  ISSUE_THROUGHPUT
+  CODE_REVIEW_TIME
+  MEAN_TIME_TO_RECOVERY
+  CHANGE_FAILURE_RATE
+  TEAM_VELOCITY
+  SPRINT_COMPLETION_RATE
+  BUG_RATE
+}
+
+enum PredictionType {
+  SPRINT_SPILLOVER_RISK
+  TEAM_BURNOUT_RISK
+  DELIVERY_DELAY_RISK
+  QUALITY_DEGRADATION_RISK
+  CAPACITY_OVERLOAD_RISK
+} 
