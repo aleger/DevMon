@@ -19,7 +19,6 @@ const navigation = [
   { name: 'Overview', href: '/dashboard', icon: Home },
   { name: 'Metrics', href: '/dashboard/metrics', icon: BarChart3 },
   { name: 'Predictions', href: '/dashboard/predictions', icon: TrendingUp },
-  { name: 'Integrations', href: '/dashboard/integrations', icon: GitBranch },
   { name: 'Team', href: '/dashboard/team', icon: Users },
   { name: 'Alerts', href: '/dashboard/alerts', icon: AlertTriangle },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
