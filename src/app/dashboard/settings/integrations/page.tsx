@@ -32,7 +32,8 @@ import {
   GitBranch as GitBranchIcon,
   Store,
   Search,
-  Filter
+  Filter,
+  X
 } from 'lucide-react'
 
 interface Integration {
@@ -214,6 +215,10 @@ export default function IntegrationsSettingsPage() {
           : integration
       )
     )
+  }
+
+  const handleDelete = (integrationId: string) => {
+    setIntegrations(prev => prev.filter(integration => integration.id !== integrationId))
   }
 
   const handleEdit = (integrationId: string) => {
@@ -480,14 +485,24 @@ export default function IntegrationsSettingsPage() {
                         </>
                       )}
                       {integration.status === 'not_connected' && (
-                        <Button size="sm" onClick={() => handleConnect(integration.id)}>
-                          Connect
-                        </Button>
+                        <>
+                          <Button size="sm" onClick={() => handleConnect(integration.id)}>
+                            Connect
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleDelete(integration.id)}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
                       )}
                       {integration.status === 'error' && (
-                        <Button size="sm" onClick={() => handleEdit(integration.id)}>
-                          Retry
-                        </Button>
+                        <>
+                          <Button size="sm" onClick={() => handleEdit(integration.id)}>
+                            Retry
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleDelete(integration.id)}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -586,9 +601,14 @@ export default function IntegrationsSettingsPage() {
                   <div className="flex items-center space-x-2">
                     <GitBranch className="h-4 w-4 text-gray-600" />
                     <Badge variant="outline">Not Connected</Badge>
-                    <Button size="sm" onClick={() => handleConnect(integration.id)}>
-                      Connect
-                    </Button>
+                    <div className="flex items-center space-x-1">
+                      <Button size="sm" onClick={() => handleConnect(integration.id)}>
+                        Connect
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleDelete(integration.id)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -636,9 +656,14 @@ export default function IntegrationsSettingsPage() {
                     <div className="flex items-center space-x-2">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <Badge variant="destructive">Error</Badge>
-                      <Button size="sm" onClick={() => handleEdit(integration.id)}>
-                        Retry
-                      </Button>
+                      <div className="flex items-center space-x-1">
+                        <Button size="sm" onClick={() => handleEdit(integration.id)}>
+                          Retry
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleDelete(integration.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))
