@@ -22,7 +22,15 @@ export function DashboardHeader() {
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
         </Button>
-        <UserButton afterSignOutUrl="/" />
+        <UserButton 
+          afterSignOutUrl="/"
+          appearance={{
+            elements: {
+              userButtonPopoverActionButton: "text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50",
+              userButtonPopoverActionButtonText: "text-sm font-medium text-gray-700 hover:text-gray-900",
+            }
+          }}
+        />
       </div>
     </header>
   )

@@ -6,7 +6,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Shield, CheckCircle, Eye, EyeOff, User } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Shield, CheckCircle, Eye, EyeOff, Monitor, Smartphone, Tablet, X } from 'lucide-react'
+
+interface Device {
+  id: string
+  name: string
+  type: 'desktop' | 'mobile' | 'tablet'
+  location: string
+  lastActive: string
+  isCurrent: boolean
+  ipAddress: string
+}
 
 export default function SecuritySettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -17,6 +28,46 @@ export default function SecuritySettingsPage() {
     sessionTimeout: true,
     loginNotifications: true,
   })
+
+  // Mock device data
+  const [devices, setDevices] = useState<Device[]>([
+    {
+      id: '1',
+      name: 'MacBook Pro',
+      type: 'desktop',
+      location: 'San Francisco, CA',
+      lastActive: '2 minutes ago',
+      isCurrent: true,
+      ipAddress: '192.168.1.100'
+    },
+    {
+      id: '2',
+      name: 'iPhone 15',
+      type: 'mobile',
+      location: 'San Francisco, CA',
+      lastActive: '1 hour ago',
+      isCurrent: false,
+      ipAddress: '192.168.1.101'
+    },
+    {
+      id: '3',
+      name: 'iPad Pro',
+      type: 'tablet',
+      location: 'New York, NY',
+      lastActive: '3 days ago',
+      isCurrent: false,
+      ipAddress: '10.0.0.50'
+    },
+    {
+      id: '4',
+      name: 'Windows PC',
+      type: 'desktop',
+      location: 'London, UK',
+      lastActive: '1 week ago',
+      isCurrent: false,
+      ipAddress: '172.16.0.25'
+    }
+  ])
 
   const handleToggle = (key: keyof typeof settings) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }))
@@ -41,56 +92,39 @@ export default function SecuritySettingsPage() {
     setTimeout(() => setSaved(false), 3000)
   }
 
+  const handleRevokeDevice = async (deviceId: string) => {
+    setIsLoading(true)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    setDevices(prev => prev.filter(device => device.id !== deviceId))
+    setSaved(true)
+    setIsLoading(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  const getDeviceIcon = (type: Device['type']) => {
+    switch (type) {
+      case 'desktop':
+        return <Monitor className="h-4 w-4" />
+      case 'mobile':
+        return <Smartphone className="h-4 w-4" />
+      case 'tablet':
+        return <Tablet className="h-4 w-4" />
+      default:
+        return <Monitor className="h-4 w-4" />
+    }
+  }
+
   return (
     <>
       {saved && (
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            Account settings saved successfully!
+            Security settings saved successfully!
           </AlertDescription>
         </Alert>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Account Information
-          </CardTitle>
-          <CardDescription>
-            Update your personal information and account details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="firstName" className="text-sm font-medium">
-                First Name
-              </label>
-              <Input id="firstName" placeholder="John" />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="lastName" className="text-sm font-medium">
-                Last Name
-              </label>
-              <Input id="lastName" placeholder="Doe" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <Input id="email" type="email" placeholder="john@example.com" />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="company" className="text-sm font-medium">
-              Company
-            </label>
-            <Input id="company" placeholder="Acme Corp" />
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -221,17 +255,55 @@ export default function SecuritySettingsPage() {
               onCheckedChange={() => handleToggle('loginNotifications')}
             />
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="text-sm font-medium">Session Management</div>
-              <div className="text-sm text-muted-foreground">
-                Manage active sessions and devices
+      <Card>
+        <CardHeader>
+          <CardTitle>Device History</CardTitle>
+          <CardDescription>
+            Manage active sessions and devices. You can revoke access to any device except the current one.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {devices.map((device) => (
+              <div key={device.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    {getDeviceIcon(device.type)}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium">{device.name}</span>
+                      {device.isCurrent && (
+                        <Badge variant="secondary" className="text-xs">
+                          Current Device
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {device.location} • {device.ipAddress}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Last active: {device.lastActive}
+                    </div>
+                  </div>
+                </div>
+                {!device.isCurrent && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRevokeDevice(device.id)}
+                    disabled={isLoading}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Revoke
+                  </Button>
+                )}
               </div>
-            </div>
-            <Button variant="outline" size="sm">
-              Manage Sessions
-            </Button>
+            ))}
           </div>
         </CardContent>
       </Card>

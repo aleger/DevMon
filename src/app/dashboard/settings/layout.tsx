@@ -7,11 +7,13 @@ import {
   User, 
   Bell, 
   GitBranch, 
-  CreditCard
+  CreditCard,
+  Shield
 } from 'lucide-react'
 
 const settingsTabs = [
-  { name: 'Account', href: '/dashboard/settings/security', icon: User },
+  { name: 'Account', href: '/dashboard/settings/account', icon: User },
+  { name: 'Security', href: '/dashboard/settings/security', icon: Shield },
   { name: 'Notifications', href: '/dashboard/settings/notifications', icon: Bell },
   { name: 'Integrations', href: '/dashboard/settings/integrations', icon: GitBranch },
   { name: 'Billing', href: '/dashboard/settings/billing', icon: CreditCard },
@@ -34,7 +36,7 @@ export default function SettingsLayout({
       </div>
 
       <Tabs value={pathname} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           {settingsTabs.map((tab) => (
             <TabsTrigger
               key={tab.href}

@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { UserButton } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs'
 import { 
   BarChart3, 
   Zap, 
@@ -13,7 +15,10 @@ import {
   ArrowRight
 } from 'lucide-react'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { userId } = await auth()
+  const isLoggedIn = !!userId
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
@@ -35,12 +40,23 @@ export default function HomePage() {
             <Link href="/docs" className="text-sm font-medium hover:text-primary">
               Docs
             </Link>
-            <Link href="/sign-in">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
-            <Link href="/sign-up">
-              <Button>Get Started</Button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href="/dashboard">
+                  <Button>Go to Dashboard</Button>
+                </Link>
+                <UserButton afterSignOutUrl="/" />
+              </>
+            ) : (
+              <>
+                <Link href="/sign-in">
+                  <Button variant="ghost">Sign In</Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button>Get Started</Button>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
