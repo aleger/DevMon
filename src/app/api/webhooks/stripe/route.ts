@@ -6,7 +6,11 @@ import { clerkClient } from '@clerk/nextjs'
 export async function POST(req: Request) {
   const body = await req.text()
   const headersList = await headers()
-  const signature = headersList.get('stripe-signature')!
+  const signature = headersList.get('stripe-signature')
+
+  if (!signature) {
+    return new NextResponse('Missing stripe-signature header', { status: 400 })
+  }
 
   let event
 

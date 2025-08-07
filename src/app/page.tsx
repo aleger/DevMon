@@ -40,6 +40,9 @@ export default async function HomePage() {
             <Link href="/docs" className="text-sm font-medium hover:text-primary">
               Docs
             </Link>
+            <Link href="/contact" className="text-sm font-medium hover:text-primary">
+              Contact
+            </Link>
             {isLoggedIn ? (
               <>
                 <Link href="/dashboard">
