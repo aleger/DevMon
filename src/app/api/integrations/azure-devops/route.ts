@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { prisma } from '@/lib/prisma'
+import { encryptConfig } from '@/lib/encryption'
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,18 +60,18 @@ export async function POST(request: NextRequest) {
 
     const organization = user.organizations[0].organization
 
-    // Create integration
+    // Create integration with encrypted config
     const integration = await prisma.integration.create({
       data: {
         organizationId: organization.id,
         userId: user.id,
         type: 'AZURE_DEVOPS',
         name: `Azure DevOps - ${projectName}`,
-        config: {
+        config: encryptConfig({
           organizationUrl,
           personalAccessToken,
           projectName,
-        },
+        }),
         isActive: true,
       },
     })

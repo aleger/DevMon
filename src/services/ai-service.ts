@@ -1,7 +1,14 @@
 import OpenAI from 'openai'
 
+// Validate API key on startup
+if (!process.env.OPENAI_API_KEY) {
+  console.error('OPENAI_API_KEY environment variable is not set')
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 30000, // 30 second timeout
+  maxRetries: 3, // Retry failed requests up to 3 times
 })
 
 export interface MetricData {
@@ -30,6 +37,16 @@ export interface Prediction {
 export class AIService {
   static async analyzeMetrics(data: PredictionRequest): Promise<Prediction[]> {
     try {
+      // Validate input data
+      if (!data || !data.metrics || data.metrics.length === 0) {
+        throw new Error('Invalid input data: metrics array is required and cannot be empty')
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        console.error('OpenAI API key not configured')
+        return this.getFallbackPredictions()
+      }
+
       const prompt = this.buildAnalysisPrompt(data)
       
       const response = await openai.chat.completions.create({
@@ -52,18 +69,34 @@ export class AIService {
 
       const analysis = response.choices[0]?.message?.content
       if (!analysis) {
-        throw new Error('No analysis generated')
+        console.warn('No analysis content received from OpenAI')
+        return this.getFallbackPredictions()
       }
 
       return this.parseAnalysis(analysis)
     } catch (error) {
       console.error('AI analysis error:', error)
-      throw new Error('Failed to analyze metrics')
+      
+      // Return fallback predictions instead of throwing
+      return this.getFallbackPredictions()
     }
   }
 
   static async generateInsights(metrics: MetricData[]): Promise<string[]> {
     try {
+      // Validate input
+      if (!metrics || metrics.length === 0) {
+        return ['No metrics data available for analysis']
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return [
+          'Metrics collection is active',
+          'Configure AI analysis for detailed insights',
+          'Review team performance trends manually'
+        ]
+      }
+
       const prompt = `Analyze these developer metrics and provide 3-5 key insights:
       
       ${metrics.map(m => `${m.type}: ${m.value} (${m.date})`).join('\n')}
@@ -91,13 +124,18 @@ export class AIService {
 
       const insights = response.choices[0]?.message?.content
       if (!insights) {
-        return []
+        return ['Unable to generate insights at this time']
       }
 
-      return insights.split('\n').filter(line => line.trim().startsWith('-')).map(line => line.replace('- ', ''))
+      const parsedInsights = insights.split('\n')
+        .filter(line => line.trim().startsWith('-'))
+        .map(line => line.replace('- ', '').trim())
+        .filter(insight => insight.length > 0)
+
+      return parsedInsights.length > 0 ? parsedInsights : ['Analysis completed but no specific insights generated']
     } catch (error) {
       console.error('AI insights error:', error)
-      return []
+      return ['Error generating insights - please try again later']
     }
   }
 
@@ -135,24 +173,45 @@ export class AIService {
 
   private static parseAnalysis(analysis: string): Prediction[] {
     try {
-      // Extract JSON from the response
+      // Extract JSON from the response with better error handling
       const jsonMatch = analysis.match(/\[[\s\S]*\]/)
       if (!jsonMatch) {
-        throw new Error('No JSON found in analysis')
+        console.warn('No JSON array found in AI response, using fallback')
+        return this.getFallbackPredictions()
       }
 
       const predictions = JSON.parse(jsonMatch[0])
+      
+      // Validate parsed data structure
+      if (!Array.isArray(predictions)) {
+        console.warn('Parsed data is not an array, using fallback')
+        return this.getFallbackPredictions()
+      }
+
       return predictions.map((p: any) => ({
-        type: p.type,
-        title: p.title,
-        description: p.description,
-        confidence: p.confidence,
-        severity: p.severity,
-        recommendations: p.recommendations || []
-      }))
+        type: p.type || 'SPRINT_SPILLOVER_RISK',
+        title: p.title || 'Analysis Result',
+        description: p.description || 'No description available',
+        confidence: Math.max(0, Math.min(100, p.confidence || 50)), // Clamp between 0-100
+        severity: ['low', 'medium', 'high'].includes(p.severity) ? p.severity : 'medium',
+        recommendations: Array.isArray(p.recommendations) ? p.recommendations : []
+      })).filter(p => p.title && p.description) // Filter out invalid entries
     } catch (error) {
       console.error('Failed to parse AI analysis:', error)
-      return []
+      return this.getFallbackPredictions()
     }
+  }
+
+  private static getFallbackPredictions(): Prediction[] {
+    return [
+      {
+        type: 'SPRINT_SPILLOVER_RISK',
+        title: 'Analysis Unavailable',
+        description: 'AI analysis is currently unavailable. Please check your configuration.',
+        confidence: 0,
+        severity: 'low',
+        recommendations: ['Check AI service configuration', 'Review metrics manually']
+      }
+    ]
   }
 } 
